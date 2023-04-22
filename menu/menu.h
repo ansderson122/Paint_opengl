@@ -1,4 +1,4 @@
-#include "menu.c"
+#include "menu.cpp"
 
 void createMenu();
-int selected;
+
