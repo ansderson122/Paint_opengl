@@ -11,12 +11,13 @@ Line::~Line() {
 }
 
 void Line::draw() {
-    glClear(GL_COLOR_BUFFER_BIT);
+  
         glColor3f(m_red, m_green, m_blue);
         glBegin(GL_LINES);
 	        glVertex2i(m_x, m_y);
 	        glVertex2i(m_width, m_height);
         glEnd();
+        glFlush();
 }
 
 void Line::setNewDot(int x, int y){
