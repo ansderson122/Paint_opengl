@@ -6,7 +6,7 @@
 
 #include "menu/menu.h"
 #include "draw/shape/shape.h"
-#include "draw/shape/shape.cpp"
+
 
 int window_w = 800, window_h = 600;
 int currentX=0 ,currentY=0 ,startX = 0,startY=0;

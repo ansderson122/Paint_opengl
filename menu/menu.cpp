@@ -1,5 +1,5 @@
 #include <GL/glut.h>
-
+#include "menu.h"
 int option = 0;
 
 
@@ -29,6 +29,10 @@ void processShapeMenu(int x){
     }
 }
 
+void shapeMenu(int x){
+	
+}
+
 void createMenu() {
 	
 	int shapeMenu = glutCreateMenu(processShapeMenu);
@@ -37,9 +41,6 @@ void createMenu() {
 	glutAddMenuEntry("Triangulo", 3);
 	glutAddMenuEntry("Cicurlo", 4);
 
-	
-	
-	
 	
     int menu = glutCreateMenu(menuCallback);
     glutAddMenuEntry("Selecionar", 1);

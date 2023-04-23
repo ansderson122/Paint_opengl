@@ -16,4 +16,6 @@ class Shape{
 		int m_x, m_y, m_x2, m_y2, m_op;
     	float m_red, m_green, m_blue;
 };
+
+#include "shape.cpp"
 #endif
