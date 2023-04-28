@@ -11,6 +11,9 @@ class Shape{
 		void setNewDot(int,int);
 		void setNewDot1(int,int);
 		void setOp(int);
+		void setColor(float  r, float  g,float  b);
+		int* getX();
+		int* getY();
 	
 	private:
 		int m_x, m_y, m_x2, m_y2, m_op;

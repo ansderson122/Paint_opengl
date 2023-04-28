@@ -86,3 +86,24 @@ void Shape::setNewDot1(int x, int y){
 void Shape::setOp(int x){
 	m_op = x;
 }
+
+void Shape::setColor(float  r, float  g,float  b){
+	m_red = r;
+	m_green = g;
+	m_blue = b;
+}
+
+int* Shape::getX() {
+    int* coords = new int[2];
+    coords[0] = m_x;
+    coords[1] = m_y;
+    return coords;
+}
+
+int* Shape::getY() {
+    int* coords = new int[2];
+    coords[0] = m_x2;
+    coords[1] = m_y2;
+    return coords;
+}
+

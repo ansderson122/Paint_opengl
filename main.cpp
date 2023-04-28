@@ -21,19 +21,20 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT); 
 	for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
 		(*it).draw();
-	}	    
-	glutSwapBuffers();
-	
-	if (option != 0){
+	}		
+
+		//printf("o %i,%i \n",currentX,currentY);
 		new_shape.setNewDot(currentX,currentY);
 		new_shape.draw();
-	}	
+
+
+	glutSwapBuffers();
 }
 
-// Função que trata o redimensionamento da janela
+// Funï¿½ï¿½o que trata o redimensionamento da janela
 void reshape(int w, int h)
 {
-    glViewport(0, 0, (GLsizei) w, (GLsizei) h);
+    glViewport(0, 0, window_w, window_h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 	gluOrtho2D(0, window_w, 0, window_h);
@@ -41,12 +42,67 @@ void reshape(int w, int h)
 }
 
 void motion(int x, int y) {
-    // atualiza a posição atual do mouse
+    // atualiza a posiï¿½ï¿½o atual do mouse
     currentX = x;
-    currentY = window_h - y; // inverte a posição y para corresponder à coordenada do OpenGL
+    currentY = window_h - y; // inverte a posiï¿½ï¿½o y para corresponder ï¿½ coordenada do OpenGL
     glutPostRedisplay();
     
    
+}
+
+int selectObject(int x[2],int y[2],int x2[2],int y2[2]){
+
+    // Check if the top left corner of square 1 is contained in square 2
+    if (x[0] >= x2[0] && x[0] <= x2[1] &&
+        y[0] >= y2[0] && y[0] <= y2[1]) {
+        return 1;
+    }
+
+    // Check if the bottom right corner of square 1 is contained in square 2
+    if (x[1] >= x2[0] && x[1] <= x2[1] &&
+         y[1] >= y2[0] &&  y[1] <= y2[1]) {
+        return 1;
+    }
+
+    // Check if the top right corner of square 1 is contained in square 2
+    if (x[1] >= x2[0] && x[1] <= x2[1] &&
+         y[0] >= y2[0] &&  y[0] <= y2[1]) {
+	return 1;
+	}
+	
+		// Check if the bottom left corner of square 1 is contained in square 2
+	if (x[0] >= x2[0] && x[0] <= x2[1] &&
+	    y[1] >= y2[0] && y[1] <= y2[1]) {
+	    return 1;
+	}
+	
+	// Check if the top left corner of square 2 is contained in square 1
+	if (x2[0] >= x[0] && x2[0] <= x[1] &&
+	    y2[0] >= y[0] && y2[0] <=  y[1]) {
+	    return 1;
+	}
+	
+	// Check if the bottom right corner of square 2 is contained in square 1
+	if (x2[1] >= x[0] && x2[1] <= x[1] &&
+	    y2[1] >= y[0] && y2[1] <=  y[1]) {
+	    return 1;
+	}
+	
+	// Check if the top right corner of square 2 is contained in square 1
+	if (x2[1] >= x[0] && x2[1] <= x[1] &&
+	    y2[0] >= y[0] && y2[0] <=  y[1]) {
+	    return 1;
+	}
+	
+	// Check if the bottom left corner of square 2 is contained in square 1
+	if (x2[0] >= x[0] && x2[0] <= x[1] &&
+	    y2[1] >= y[0] && y2[1] <=  y[1]) {
+	    return 1;
+	}
+
+	// If none of the corners are contained, return 0
+	return 0;
+	
 }
 
 void mouse(int button, int state, int x, int y) {
@@ -54,18 +110,51 @@ void mouse(int button, int state, int x, int y) {
 	    	if (option != 0){
 	    		startX = x;
 	        	startY = window_h - y; 
-	        	isDrawing = 1;
+	        	isDrawing = 0;
 				new_shape.setNewDot1(startX,startY);
 				new_shape.setOp(option);	
+			}
+			
+			if (option == 0){
+				startX = x;
+	        	startY = window_h - y; 
+	        	
+	        	new_shape.setNewDot1(startX,startY);
+				new_shape.setOp(2);	
 			}
 		}
     	
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option !=0) {
-		isDrawing = 0;
+		isDrawing = 1;
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
-    }
+    }else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option == 0){
+    	int x[2];
+    	x[0] = startX;
+    	x[1] = currentX;
+    	
+    	int y[2];
+    	y[0] = startY;
+    	y[1] = currentY;
+    	
+    	int* x2;
+    	int* y2;
+    	
+    	for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
+    		x2 = (*it).getX();
+    		y2 = (*it).getY();
+			printf("Q [%i,%i] [%i,%i] \n O[%i,%i]  [%i,%i] \n",x[0],y[0],x[1],y[1],x2[0],y2[0],x2[1],y2[1]);
+			if (selectObject(x,y,x2,y2)){
+				(*it).setColor(0.0,0.0,1.0);
+				
+				
+			}
+		}
+	}
+	
 }
+
+
 
 
 int main(int argc, char** argv)
@@ -74,9 +163,10 @@ int main(int argc, char** argv)
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
     glutInitWindowSize(window_w, window_h);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("ATIVIDADE – INTRODUÇÃO AO OPENGL");
+    glutCreateWindow("ATIVIDADE ï¿½ INTRODUï¿½ï¿½O AO OPENGL");
     
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT); 
     createMenu();
     glutDisplayFunc(display);
     glutMouseFunc(mouse);
