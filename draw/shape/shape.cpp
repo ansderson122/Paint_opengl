@@ -13,44 +13,34 @@ Shape::~Shape() {
 
 void Shape::draw() {
 	glColor3f(m_red, m_green, m_blue);
-	glBegin(GL_LINES);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
   	switch (m_op){
   		case 1:
+		  	glBegin(GL_LINES);
 			glVertex2i(m_x, m_y);
 			glVertex2i(m_x2, m_y2);
 		    break;
 		case 2:
+			glBegin(GL_QUADS);
 			glVertex2i(m_x, m_y);
 			glVertex2i(m_x, m_y2);
-			
-			glVertex2i(m_x, m_y2);
-			glVertex2i(m_x2, m_y2);
-			
 			glVertex2i(m_x2, m_y2);
 			glVertex2i(m_x2, m_y);
-			
-			glVertex2i(m_x2, m_y);
-			glVertex2i(m_x, m_y);
 			break;
 		case 3:
+			glBegin(GL_TRIANGLES);
 			int x;
 			if (m_x2 > m_x){
 				 x = m_x+((m_x2 - m_x)/2);
 			}else{
 				 x = m_x2+((m_x - m_x2)/2);
 			}
-			
-			
 			glVertex2i(m_x, m_y);
 			glVertex2i(m_x2, m_y);
-			
-			glVertex2i(m_x2, m_y);
 			glVertex2i(x, m_y2);
-			
-			glVertex2i(x, m_y2);
-			glVertex2i(m_x, m_y);
 			break;
 		case 4:
+			glBegin(GL_LINES);
 			int r =sqrt(pow((m_x-m_x2),2) + pow((m_y-m_y2),2));
 			int i = 0;
 			float rad = i * 3.14159 / 180.0;
@@ -69,7 +59,6 @@ void Shape::draw() {
 			glVertex2f(x1, y1);
 	}
 	glEnd();
-	glFlush();
 }
 		  
 
@@ -96,13 +85,13 @@ void Shape::setColor(float  r, float  g,float  b){
 int* Shape::getX() {
     int* coords = new int[2];
     coords[0] = m_x;
-    coords[1] = m_y;
+    coords[1] = m_x2;
     return coords;
 }
 
 int* Shape::getY() {
     int* coords = new int[2];
-    coords[0] = m_x2;
+    coords[0] = m_y;
     coords[1] = m_y2;
     return coords;
 }

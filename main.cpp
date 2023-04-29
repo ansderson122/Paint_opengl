@@ -14,10 +14,18 @@ int isDrawing = 0;
 
 
 std::vector<Shape> shapes; 
+std::vector<Shape> objSelect; 
 Shape new_shape(startX, startY, currentX, currentY, 0.0f, 0.0f, 0.0f,1);
 
 void display(void)
 {   
+	glViewport(0, 0, window_w, window_h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+	gluOrtho2D(0, window_w, 0, window_h);
+    glMatrixMode(GL_MODELVIEW);
+
+
 	glClear(GL_COLOR_BUFFER_BIT); 
 	for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
 		(*it).draw();
@@ -51,58 +59,47 @@ void motion(int x, int y) {
 }
 
 int selectObject(int x[2],int y[2],int x2[2],int y2[2]){
-
-    // Check if the top left corner of square 1 is contained in square 2
-    if (x[0] >= x2[0] && x[0] <= x2[1] &&
-        y[0] >= y2[0] && y[0] <= y2[1]) {
-        return 1;
-    }
-
-    // Check if the bottom right corner of square 1 is contained in square 2
-    if (x[1] >= x2[0] && x[1] <= x2[1] &&
-         y[1] >= y2[0] &&  y[1] <= y2[1]) {
-        return 1;
-    }
-
-    // Check if the top right corner of square 1 is contained in square 2
-    if (x[1] >= x2[0] && x[1] <= x2[1] &&
-         y[0] >= y2[0] &&  y[0] <= y2[1]) {
-	return 1;
+	
+	if( x2[0] >= x[0] && x2[0] <= x[1] &&
+		y2[0] >= y[0] && y2[0] <= y[1]
+	){
+			return 1;
 	}
 	
-		// Check if the bottom left corner of square 1 is contained in square 2
-	if (x[0] >= x2[0] && x[0] <= x2[1] &&
-	    y[1] >= y2[0] && y[1] <= y2[1]) {
-	    return 1;
-	}
-	
-	// Check if the top left corner of square 2 is contained in square 1
-	if (x2[0] >= x[0] && x2[0] <= x[1] &&
-	    y2[0] >= y[0] && y2[0] <=  y[1]) {
-	    return 1;
-	}
-	
-	// Check if the bottom right corner of square 2 is contained in square 1
-	if (x2[1] >= x[0] && x2[1] <= x[1] &&
-	    y2[1] >= y[0] && y2[1] <=  y[1]) {
-	    return 1;
-	}
-	
-	// Check if the top right corner of square 2 is contained in square 1
-	if (x2[1] >= x[0] && x2[1] <= x[1] &&
-	    y2[0] >= y[0] && y2[0] <=  y[1]) {
-	    return 1;
-	}
-	
-	// Check if the bottom left corner of square 2 is contained in square 1
-	if (x2[0] >= x[0] && x2[0] <= x[1] &&
-	    y2[1] >= y[0] && y2[1] <=  y[1]) {
-	    return 1;
+	if( x2[1] >= x[0] && x2[1] <= x[1] &&
+		y2[1] >= y[0] && y2[0] <= y[1]
+	){
+			return 1;
 	}
 
-	// If none of the corners are contained, return 0
 	return 0;
 	
+}
+
+void select(){
+	int x[2];
+    x[0] = startX;
+    x[1] = currentX;
+    	
+    int y[2];
+    y[0] = startY;
+    y[1] = currentY;
+    	
+    int* x2;
+    int* y2;
+    	
+    for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
+    	x2 = (*it).getX();
+    	y2 = (*it).getY();
+			//printf("Q [%i,%i] [%i,%i] \n O[%i,%i]  [%i,%i] \n",x[0],y[0],x[1],y[1],x2[0],y2[0],x2[1],y2[1]);
+		if (selectObject(x,y,x2,y2)){
+			(*it).setColor(0.0,0.0,1.0);
+			objSelect.push_back((*it));	
+		}
+		free(x2);
+		free(y2);
+	}
+		//printf("tamanho %i \n",objSelect.size());	
 }
 
 void mouse(int button, int state, int x, int y) {
@@ -129,29 +126,8 @@ void mouse(int button, int state, int x, int y) {
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
     }else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option == 0){
-    	int x[2];
-    	x[0] = startX;
-    	x[1] = currentX;
-    	
-    	int y[2];
-    	y[0] = startY;
-    	y[1] = currentY;
-    	
-    	int* x2;
-    	int* y2;
-    	
-    	for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
-    		x2 = (*it).getX();
-    		y2 = (*it).getY();
-			printf("Q [%i,%i] [%i,%i] \n O[%i,%i]  [%i,%i] \n",x[0],y[0],x[1],y[1],x2[0],y2[0],x2[1],y2[1]);
-			if (selectObject(x,y,x2,y2)){
-				(*it).setColor(0.0,0.0,1.0);
-				
-				
-			}
-		}
+		select();
 	}
-	
 }
 
 
@@ -168,9 +144,9 @@ int main(int argc, char** argv)
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT); 
     createMenu();
-    glutDisplayFunc(display);
+    glutDisplayFunc(display); 
+	glutMotionFunc(motion);
     glutMouseFunc(mouse);
-    glutMotionFunc(motion);
     glutReshapeFunc(reshape);
     
     glutMainLoop();
