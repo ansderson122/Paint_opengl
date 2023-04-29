@@ -13,29 +13,38 @@
 int window_w = 800, window_h = 600;
 int currentX=0 ,currentY=0 ,startX = 0,startY=0;
 int isDrawing = 0;
-
+int isSelect = 1;
 
 std::vector<Shape> shapes; 
 std::vector<int> objSelect; 
 Shape new_shape(startX, startY, currentX, currentY, 0.0f, 0.0f, 0.0f,1);
 
+void translations(int xr, int yr,int* cen,int index);
+int* center();
+
 void display(void)
 {   
-	glViewport(0, 0, window_w, window_h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-	gluOrtho2D(0, window_w, 0, window_h);
-    glMatrixMode(GL_MODELVIEW);
+    glClear(GL_COLOR_BUFFER_BIT); 
+    if(option == 5 && !isSelect){
+    	int *cen = center();
+		for (int i = 0; i < objSelect.size(); i++) {
+			translations(currentX,currentY,cen,objSelect[i]);
+		}
+		free(cen);
+	}
 
-
-	glClear(GL_COLOR_BUFFER_BIT); 
+	
+	
 	for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
 		(*it).draw();
 	}		
 
 		//printf("o %i,%i \n",currentX,currentY);
-		new_shape.setNewDot(currentX,currentY);
-		new_shape.draw();
+		if (isSelect){
+			new_shape.setNewDot(currentX,currentY);
+			new_shape.draw();
+		}
+	
 
 
 	glutSwapBuffers();
@@ -107,6 +116,14 @@ void select(){
 	currentX=0;
 }
 
+void delSelect(){
+	for(int i = 0; i < shapes.size();i++ ){
+		shapes[i].setColor(0.0,0.0,0.0);
+	}
+	objSelect.clear();
+	display();
+}
+
 void del() {
     std::sort(objSelect.begin(), objSelect.end(), std::greater<int>()); // ordem decrescente 
     for (int i = 0; i < objSelect.size(); i++) {
@@ -115,14 +132,136 @@ void del() {
     objSelect.clear();
 }
 
+int** T(int xr, int yr) {
+    // Alocar a matriz
+    int** matriz = new int*[3];
+    for (int i = 0; i < 3; i++) {
+        matriz[i] = new int[3];
+    }
+
+    // Definir os valores da matriz
+    matriz[0][0] = 1;
+    matriz[0][1] = 0;
+    matriz[0][2] = xr;
+    matriz[1][0] = 0;
+    matriz[1][1] = 1;
+    matriz[1][2] = yr;
+    matriz[2][0] = 0;
+    matriz[2][1] = 0;
+    matriz[2][2] = 1;
+
+    return matriz;
+}
+
+int** P(int x1,int y1, int x2,int y2){
+	int** matriz = new int*[3];
+    for (int i = 0; i < 3; i++) {
+        matriz[i] = new int[2];
+    }
+    
+    matriz[0][0] = x1;
+    matriz[1][0] = y1;
+	matriz[2][0] = 1;
+	
+	matriz[0][1] = x2;   
+    matriz[1][1] = y2;
+    matriz[2][1] = 1;
+    
+    return matriz;
+}
+
+int* center(){
+	int* x;
+	int* y;
+	int x_maior =0 ,y_maior=0,x_menor,y_menor;
+	x_menor = shapes[objSelect[0]].getX()[0];
+	y_menor = shapes[objSelect[0]].getY()[0];
+	
+	for (int i = 0; i < objSelect.size(); i++) {
+		x = shapes[objSelect[i]].getX();
+		y = shapes[objSelect[i]].getY();
+		
+		if (x_maior < x[0]){
+			x_maior = x[0];
+		}
+		if (x_maior < x[1]){
+			x_maior = x[1];
+		}
+		
+		if (y_maior < y[0]){
+			y_maior = y[0];
+		}
+		if (y_maior < y[1]){
+			y_maior = y[1];
+		}
+		
+		if (x_menor > x[0]){
+			x_menor = x[0];
+		}
+		if (x_menor > x[1]){
+			x_menor = x[1];
+		}
+		
+		if (y_menor > y[0]){
+			y_menor = y[0];
+		}
+		if (y_menor > y[1]){
+			y_menor = y[1];
+		}
+		
+		free(x); free(y);
+	}
+	
+	int* center = new int[2];
+	center[0] = (x_maior + x_menor)/2;
+	center[1] = (y_maior + y_menor)/2;
+	
+	return center;
+}
+
+void translations(int xr, int yr,int* cen,int index){
+	int* x = shapes[index].getX();
+	int* y = shapes[index].getY();
+	int x1,y1;
+
+	x1 = xr - cen[0];
+	y1 = yr - cen[1];
+	int** mP = P(x[0],y[0],x[1],y[1]);
+	int** mP1 = P(0,0,0,0);
+	int** mT = T(x1,y1);
+	for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                mP1[i][j] += mT[i][k] * mP[k][j];
+            }
+        }
+    }
+        
+    shapes[index].setNewDot1(mP1[0][0],mP1[1][0]);
+    shapes[index].setNewDot(mP1[0][1],mP1[1][1]);
+    
+    free(x); free(y); free(mT); free(mP); free(mP1);
+}
+
 
 void keyboard(unsigned char key, int xIn, int yIn){
-	//printf("%i",key);
+	printf("%i",key);
 	switch (key){
 		case 127:
 			del();
 			display();
 			break;
+			
+		case 13:
+			if(option == 5){
+				isSelect = 0;
+			}
+			break;
+		case 27:
+			delSelect();
+			isSelect = 1;
+			break;
+			
 	}
 }
 
@@ -141,15 +280,19 @@ void mouse(int button, int state, int x, int y) {
 	        	new_shape.setNewDot1(startX,startY);
 				new_shape.setOp(2);	
 			}
+			
+		
 		}
     	
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option > 0 && option <= 4) {
 		isDrawing = 1;
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
-    }else{
+    }else if(isSelect){
 		select();
 	}
+		
+	
 }
 
 
