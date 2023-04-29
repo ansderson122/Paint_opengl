@@ -1,5 +1,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
+
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -14,7 +16,7 @@ int isDrawing = 0;
 
 
 std::vector<Shape> shapes; 
-std::vector<Shape> objSelect; 
+std::vector<int> objSelect; 
 Shape new_shape(startX, startY, currentX, currentY, 0.0f, 0.0f, 0.0f,1);
 
 void display(void)
@@ -88,31 +90,51 @@ void select(){
     int* x2;
     int* y2;
     	
-    for (std::vector<Shape>::iterator it = shapes.begin(); it != shapes.end(); ++it){
-    	x2 = (*it).getX();
-    	y2 = (*it).getY();
+    for (int i = 0; i < shapes.size();i++){
+    	x2 = shapes[i].getX();
+    	y2 = shapes[i].getY();
 			//printf("Q [%i,%i] [%i,%i] \n O[%i,%i]  [%i,%i] \n",x[0],y[0],x[1],y[1],x2[0],y2[0],x2[1],y2[1]);
 		if (selectObject(x,y,x2,y2)){
-			(*it).setColor(0.0,0.0,1.0);
-			objSelect.push_back((*it));	
+			shapes[i].setColor(0.0,0.0,1.0);
+			objSelect.push_back(i);	
 		}
 		free(x2);
 		free(y2);
 	}
-		//printf("tamanho %i \n",objSelect.size());	
+	//printf("tamanho %i \n",objSelect.size());
+	new_shape.setNewDot1(0,0);
+	currentY=0;
+	currentX=0;
+}
+
+void del() {
+    std::sort(objSelect.begin(), objSelect.end(), std::greater<int>()); // ordem decrescente 
+    for (int i = 0; i < objSelect.size(); i++) {
+        shapes.erase(shapes.begin() + objSelect[i]);
+    }
+    objSelect.clear();
+}
+
+
+void keyboard(unsigned char key, int xIn, int yIn){
+	//printf("%i",key);
+	switch (key){
+		case 127:
+			del();
+			display();
+			break;
+	}
 }
 
 void mouse(int button, int state, int x, int y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) { 
-	    	if (option != 0){
+	    	if (option > 0 && option <= 4){
 	    		startX = x;
 	        	startY = window_h - y; 
 	        	isDrawing = 0;
 				new_shape.setNewDot1(startX,startY);
 				new_shape.setOp(option);	
-			}
-			
-			if (option == 0){
+			}else{
 				startX = x;
 	        	startY = window_h - y; 
 	        	
@@ -121,11 +143,11 @@ void mouse(int button, int state, int x, int y) {
 			}
 		}
     	
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option !=0) {
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option > 0 && option <= 4) {
 		isDrawing = 1;
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
-    }else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option == 0){
+    }else{
 		select();
 	}
 }
@@ -143,11 +165,13 @@ int main(int argc, char** argv)
     
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT); 
+	
     createMenu();
     glutDisplayFunc(display); 
+	glutReshapeFunc(reshape);
+    glutKeyboardFunc(keyboard);
+	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
-    glutMouseFunc(mouse);
-    glutReshapeFunc(reshape);
     
     glutMainLoop();
     return 0;

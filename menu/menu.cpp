@@ -8,6 +8,10 @@ void menuCallback(int x) {
    		case 1:
    			option = 0; //selecionar
    			break;
+   			
+   		case 2:
+   			option = 5; 
+   			break;
    }
   
 }
@@ -45,6 +49,9 @@ void createMenu() {
     int menu = glutCreateMenu(menuCallback);
     glutAddMenuEntry("Selecionar", 1);
     glutAddSubMenu("Formas Geometricas", shapeMenu);
+    glutAddMenuEntry("Transladar", 2); 
+	glutAddMenuEntry("Rotacionar", 3); 
+	glutAddMenuEntry("Escalar", 4);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
