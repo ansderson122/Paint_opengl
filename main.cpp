@@ -1,9 +1,12 @@
 #include <GL/glut.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <cmath>
+
 
 
 #include "menu/menu.h"
@@ -21,6 +24,7 @@ Shape new_shape(startX, startY, currentX, currentY, 0.0f, 0.0f, 0.0f,1);
 
 void translations(int xr, int yr,int* cen,int index);
 int* center();
+void rotation(int* cen,int index);
 
 void display(void)
 {   
@@ -29,6 +33,12 @@ void display(void)
     	int *cen = center();
 		for (int i = 0; i < objSelect.size(); i++) {
 			translations(currentX,currentY,cen,objSelect[i]);
+		}
+		free(cen);
+	}else if(option == 6 && !isSelect){
+		int *cen = center();
+		for (int i = 0; i < objSelect.size(); i++) {
+			rotation(cen,objSelect[i]);
 		}
 		free(cen);
 	}
@@ -70,6 +80,10 @@ void motion(int x, int y) {
 }
 
 int selectObject(int x[2],int y[2],int x2[2],int y2[2]){
+	std::sort(x, x + 2); // ordem cresente 
+	std::sort(y, y + 2);
+	std::sort(x2, x2 + 2);
+	std::sort(y2, y2 + 2);
 	
 	if( x2[0] >= x[0] && x2[0] <= x[1] &&
 		y2[0] >= y[0] && y2[0] <= y[1]
@@ -78,7 +92,7 @@ int selectObject(int x[2],int y[2],int x2[2],int y2[2]){
 	}
 	
 	if( x2[1] >= x[0] && x2[1] <= x[1] &&
-		y2[1] >= y[0] && y2[0] <= y[1]
+		y2[1] >= y[0] && y2[1] <= y[1]
 	){
 			return 1;
 	}
@@ -140,15 +154,9 @@ int** T(int xr, int yr) {
     }
 
     // Definir os valores da matriz
-    matriz[0][0] = 1;
-    matriz[0][1] = 0;
-    matriz[0][2] = xr;
-    matriz[1][0] = 0;
-    matriz[1][1] = 1;
-    matriz[1][2] = yr;
-    matriz[2][0] = 0;
-    matriz[2][1] = 0;
-    matriz[2][2] = 1;
+    matriz[0][0] = 1;    matriz[0][1] = 0;    matriz[0][2] = xr;
+	matriz[1][0] = 0;    matriz[1][1] = 1;    matriz[1][2] = yr;
+    matriz[2][0] = 0;    matriz[2][1] = 0;    matriz[2][2] = 1;
 
     return matriz;
 }
@@ -243,6 +251,71 @@ void translations(int xr, int yr,int* cen,int index){
     free(x); free(y); free(mT); free(mP); free(mP1);
 }
 
+float** R(int* center,int x, int y){
+	int xr = center[0];
+	int yr = center[1];
+	
+	int **T1 = T(-xr,-yr);
+	
+	float m = sqrt(pow(x - xr,2 )  + pow(y - yr,2 ));
+
+	float Vx = (x - xr)/ m;
+	float Vy = (y - yr)/ m;
+	printf("m %f \n",Vx);
+	float **mR = new float*[3];
+	for (int i = 0; i < 3; i++) {
+        mR[i] = new float[3];
+    }
+    
+    
+    mR[0][0] = Vy;       mR[0][1] = -1.0f*Vx;   mR[0][2] = 0;
+    mR[1][0] = Vx;       mR[1][1] = Vy;    mR[1][2] = 0;
+    mR[2][0] = 0;        mR[2][1] = 0;     mR[2][2] = 1;
+    
+    float **aux = new float*[3];
+	for (int i = 0; i < 3; i++) {
+        aux[i] = new float[3];
+    }
+    
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j) {
+            for(int k = 0; k < 3; ++k) {
+                aux[i][j] += mR[i][k] * T1[k][j];
+            }
+        }
+    }
+    
+
+    free(mR); free(T1);
+	return aux; 
+}
+
+void rotation(int* cen,int index){
+	float** mR = R(cen,currentX,currentY);
+	
+	int* x = shapes[index].getX();
+	int* y = shapes[index].getY();
+	int** mP = P(x[0],y[0],x[1],y[1]);
+	
+	int** mP1 = new int*[3];
+    for (int i = 0; i < 3; i++) {
+        mP1[i] = new int[2];
+    }
+	
+	for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                mP1[i][j] += mR[i][k] * mP[k][j];
+            }
+        }
+    }
+    printf("%i %i\n %i %i \n",mP1[0][0],mP1[1][0],mP1[0][1],mP1[1][1]);
+    shapes[index].setNewDot1(mP1[0][0],mP1[1][0]);
+    shapes[index].setNewDot(mP1[0][1],mP1[1][1]);
+    
+    free(x); free(y); free(mR); free(mP); free(mP1);
+}
+
 
 void keyboard(unsigned char key, int xIn, int yIn){
 	printf("%i",key);
@@ -253,8 +326,11 @@ void keyboard(unsigned char key, int xIn, int yIn){
 			break;
 			
 		case 13:
-			if(option == 5){
+			if(isSelect){
 				isSelect = 0;
+			}else{
+				delSelect();
+				isSelect = 1;
 			}
 			break;
 		case 27:
@@ -308,6 +384,19 @@ int main(int argc, char** argv)
     
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT); 
+	
+	int* t = new int[2];
+	t[0] = 4;
+	t[1] = 3;
+	float **m = R(t,3,4);
+	
+	for(int i = 0; i < 3; i++){
+		for(int j = 0; j < 3; j++){
+			printf("%f ",m[i][j]);
+		}
+		printf("\n");
+	}
+	
 	
     createMenu();
     glutDisplayFunc(display); 

@@ -40,23 +40,15 @@ void Shape::draw() {
 			glVertex2i(x, m_y2);
 			break;
 		case 4:
-			glBegin(GL_LINES);
+			glBegin(GL_LINE_LOOP);
 			int r =sqrt(pow((m_x-m_x2),2) + pow((m_y-m_y2),2));
-			int i = 0;
-			float rad = i * 3.14159 / 180.0;
-			float x1 = m_x + r * cos(rad);
-		    float y1 = m_y + r * sin(rad);
-			for (i = 0; i < 360; i++) {
-				glVertex2f(x1, y1);
+			float rad, x1 ,y1;
+			for (int i = 0; i < 360; i++) {
 		        rad = i * 3.14159 / 180.0;
 		        x1 = m_x + r * cos(rad);
 		        y1 = m_y + r * sin(rad);
 	        	glVertex2f(x1, y1);
     		} 
-			glVertex2f(x1, y1);
-			x1 = m_x + r * cos(0);
-			y1 = m_y + r * sin(0);
-			glVertex2f(x1, y1);
 	}
 	glEnd();
 }
