@@ -1,12 +1,15 @@
 #include <GL/glut.h>
+#include <vector>
 #include "shape.h"
 #include <math.h>
 #include <stdio.h>
-Shape::Shape() {
+Shape::Shape() {	
+	x.reserve(1);
+	y.reserve(1);
 }
 
-Shape::Shape(int x, int y, int w, int h, float r, float g, float b,int op) :
-    m_x(x), m_y(y), m_x2(w), m_y2(h), m_red(r), m_green(g), m_blue(b), m_op(op)  {}
+Shape::Shape(float r, float g, float b,int op) :
+     m_red(r), m_green(g), m_blue(b), m_op(op)  {}
 
 Shape::~Shape() {
 }
@@ -17,36 +20,30 @@ void Shape::draw() {
   	switch (m_op){
   		case 1:
 		  	glBegin(GL_LINES);
-			glVertex2i(m_x, m_y);
-			glVertex2i(m_x2, m_y2);
+			glVertex2i(x[0], y[0]);
+			glVertex2i(x[1], y[1]);
 		    break;
 		case 2:
 			glBegin(GL_QUADS);
-			glVertex2i(m_x, m_y);
-			glVertex2i(m_x, m_y2);
-			glVertex2i(m_x2, m_y2);
-			glVertex2i(m_x2, m_y);
+			glVertex2i(x[0], y[0]);
+			glVertex2i(x[1], y[1]);
+			glVertex2i(x[2], y[2]);
+			glVertex2i(x[3], y[3]);
 			break;
 		case 3:
 			glBegin(GL_TRIANGLES);
-			int x;
-			if (m_x2 > m_x){
-				 x = m_x+((m_x2 - m_x)/2);
-			}else{
-				 x = m_x2+((m_x - m_x2)/2);
-			}
-			glVertex2i(m_x, m_y);
-			glVertex2i(m_x2, m_y);
-			glVertex2i(x, m_y2);
+			glVertex2i(x[0], y[0]);
+			glVertex2i(x[1], y[1]);
+			glVertex2i(x[2], y[2]);
 			break;
 		case 4:
 			glBegin(GL_LINE_LOOP);
-			int r =sqrt(pow((m_x-m_x2),2) + pow((m_y-m_y2),2));
+			float r =sqrt(pow((x[0]-x[1]),2) + pow((y[0]-y[1]),2));
 			float rad, x1 ,y1;
 			for (int i = 0; i < 360; i++) {
 		        rad = i * 3.14159 / 180.0;
-		        x1 = m_x + r * cos(rad);
-		        y1 = m_y + r * sin(rad);
+		        x1 = x[0] + r * cos(rad);
+		        y1 = y[0] + r * sin(rad);
 	        	glVertex2f(x1, y1);
     		} 
 	}
@@ -54,19 +51,68 @@ void Shape::draw() {
 }
 		  
 
-void Shape::setNewDot(int x, int y){
-	m_x2 = x;
-	m_y2 = y;
+void Shape::setNewDot(float x1, float y1){
+	switch (m_op){
+		case 1:
+			x.resize(2);
+			y.resize(2);
+			
+			x[1] = x1;
+			y[1] = y1;
+			break;
+		case 2:
+			x.resize(4);
+			y.resize(4);
+			
+			x[1]=(x1);
+			y[1]=(y[0]);
+			
+			x[2]=(x1);
+			y[2]=(y1);
+			
+			x[3]=(x[0]);
+			y[3]=(y1);
+			break;
+		case 3:
+			x.resize(3);
+			y.resize(3);
+			
+			int x2;
+			if (x1 > x[0]){
+				 x2 = x[0]+((x1 - x[0])/2);
+			}else{
+				 x2 = x1+((x[0] - x1)/2);
+			}
+			x[1]=(x1);
+			y[1]=(y[0]);
+			
+			x[2]=(x2);
+			y[2]=(y1);
+			break;
+		case 4:
+			x.resize(2);
+			y.resize(2);
+			
+			x[1] = x1;
+			y[1] = y1;
+			break;
+	}
 }
 
-void Shape::setNewDot1(int x, int y){
-	m_x = x;
-	m_y = y;
+void Shape::setNewDot1(float x1, float y1){
+	x[0]= x1;
+	y[0]= y1;
 }
 
 void Shape::setOp(int x){
 	m_op = x;
 }
+
+void Shape::setDot(float x1,float y1,int index){
+	x[index] = x1;
+	y[index] = y1;
+}
+
 
 void Shape::setColor(float  r, float  g,float  b){
 	m_red = r;
@@ -74,17 +120,11 @@ void Shape::setColor(float  r, float  g,float  b){
 	m_blue = b;
 }
 
-int* Shape::getX() {
-    int* coords = new int[2];
-    coords[0] = m_x;
-    coords[1] = m_x2;
-    return coords;
+std::vector<float> Shape::getX() {
+    return x;
 }
 
-int* Shape::getY() {
-    int* coords = new int[2];
-    coords[0] = m_y;
-    coords[1] = m_y2;
-    return coords;
+std::vector<float> Shape::getY() {
+    return y;
 }
 
