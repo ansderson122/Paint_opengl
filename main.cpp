@@ -1,4 +1,5 @@
 #include <GL/glut.h>
+#include<GL/freeglut.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -15,7 +16,7 @@
 
 float window_w = 800, window_h = 600;
 float currentX=0 ,currentY=0 ,startX = 0,startY=0;
-int isDrawing = 0;
+int scrollDirection  = 0;
 int isSelect = 1;
 
 std::vector<Shape> shapes; 
@@ -24,7 +25,8 @@ Shape new_shape(0.0f, 0.0f, 0.0f,1);
 
 void translations(float xr, float yr,float* cen,int index);
 float* center();
-//void rotation(float* cen,int index);
+void rotation(float* cen,int index);
+void scale(float* cen, int index,float Xc,float Yc);
 
 void display(void){   
     glClear(GL_COLOR_BUFFER_BIT); 
@@ -37,8 +39,17 @@ void display(void){
 	}else if(option == 6 && !isSelect){
 		float *cen = center();
 		for (int i = 0; i < objSelect.size(); i++) {
-			//rotation(cen,objSelect[i]);
+			rotation(cen,objSelect[i]);
 		}
+		startX=currentX;
+		startY=currentY;
+		free(cen);
+	}else if(option == 7 && !isSelect){
+		float *cen = center();
+		for (int i = 0; i < objSelect.size(); i++) {
+			scale(cen,objSelect[i],currentX,currentY);
+		}
+		
 		free(cen);
 	}
 
@@ -73,8 +84,6 @@ void motion(int x, int y) {
     currentX = x;
     currentY = window_h - y; // inverte a posiï¿½ï¿½o y para corresponder ï¿½ coordenada do OpenGL
     glutPostRedisplay();
-    
-   
 }
 
 int selectObject(float x[2],float y[2],std::vector<float> x2,std::vector<float> y2){
@@ -148,15 +157,12 @@ float** T(float xr, float yr) {
     return matriz;
 }
 
-float** P(float x1,float y1){
-	float** matriz = new float*[3];
-    for (int i = 0; i < 3; i++) {
-        matriz[i] = new float[1];
-    }
-
-    matriz[0][0] = x1;
-    matriz[1][0] = y1;
-	matriz[2][0] = 1;
+float* P(float x1,float y1){
+	float* matriz = new float[3];
+   
+    matriz[0] = x1;
+    matriz[1] = y1;
+	matriz[2] = 1;
 
     return matriz;
 }
@@ -212,19 +218,53 @@ void translations(float xr, float yr,float* cen,int index){
 	
 	
 	for(int t = 0; t < x.size();t++){
-		float** mP1 = P(0,0);
-		float** mP = P(x[t],y[t]);
+		float* mP1 = P(0,0);
+		float* mP = P(x[t],y[t]);
 		for (int i = 0; i < 3; ++i) {
-        	for (int j = 0; j < 2; ++j) {
-            	for (int k = 0; k < 3; ++k) {
-                	mP1[i][j] += mT[i][k] * mP[k][j];
-            	}
-        	}
+            for (int k = 0; k < 3; ++k) {
+                mP1[i] += mT[i][k] * mP[k];
+            }
     	}
-    	shapes[index].setDot(mP1[0][0],mP1[1][0],t);
+    	shapes[index].setDot(mP1[0],mP1[1],t);
 		free(mP);free(mP1);
 	}
     free(mT); 
+}
+
+float** M3x3(){
+	float** m = new float*[3];
+	for(int i = 0; i < 3;i++){
+		m[i]  = new float[3];
+		for (int j = 0; j < 3;j++){
+			m[i][j] = 0.0;
+		}
+	}
+	return m;
+}
+
+float** multiply3M3x3(float **m1, float **m2,float **m3){
+	float** aux = M3x3();
+	float** res = M3x3();
+	
+	for (int i = 0; i < 3; i++) {
+    	for (int j = 0; j < 3; j++) {
+        	for (int k = 0; k < 3; k++) {
+            	aux[i][j] += m1[i][k] * m2[k][j];
+        	}
+    	}
+	}
+	
+	
+	
+	for (int i = 0; i < 3; i++) {
+    	for (int j = 0; j < 3; j++) {
+        	for (int k = 0; k < 3; k++) {
+           	 	res[i][j] += aux[i][k] * m3[k][j];
+        	}
+    	}
+	}
+	free(aux);
+	return res;
 }
 
 float** R(float* center,float angle){
@@ -234,80 +274,89 @@ float** R(float* center,float angle){
 	float **T1 = T(-xr,-yr);
 	float **T2 = T(xr,yr);
 	
-	float radians = angle * M_PI / 180;
-	float cosAngle = cos(radians);
-	float sinAngle = sin(radians);
+	float cosAngle = cos(angle);
+	float sinAngle = sin(angle);
 	
-	float rotationMatrix[3][3] = {
-    {cosAngle, -sinAngle, 0},
-    {sinAngle, cosAngle, 0},
-    {0, 0, 1}
-	};
-		
-	float** transformMatrix = new float*[3];
-	for (int i = 0; i < 3;i++){
-		transformMatrix[i] = new float[3];
-		for (int j = 0; j < 3;j++){
-			transformMatrix[i][j] = 0.0;
-		}
-	}
+	float**rotationMatrix=  M3x3();
+	rotationMatrix[0][0] = cosAngle;   rotationMatrix[0][1] = -sinAngle;   rotationMatrix[0][2] = 0;
+	rotationMatrix[1][0] = sinAngle;   rotationMatrix[1][1] = cosAngle;	   rotationMatrix[1][2] = 0;
+	rotationMatrix[2][0] = 0;          rotationMatrix[2][1] = 0;           rotationMatrix[2][2] = 1;
 	
-	float** aux = new float*[3];
-	for (int i = 0; i < 3;i++){
-		aux[i] = new float[3];
-		for (int j = 0; j < 3;j++){
-			aux[i][j] = 0.0;
-		}
-	}
 
-	for (int i = 0; i < 3; i++) {
-    	for (int j = 0; j < 3; j++) {
-        	for (int k = 0; k < 3; k++) {
-            	aux[i][j] += T2[i][k] * rotationMatrix[k][j];
-        	}
-    	}
-	}
+	float** transformMatrix = multiply3M3x3(T2, rotationMatrix,T1);
 	
-	for (int i = 0; i < 3; i++) {
-    	for (int j = 0; j < 3; j++) {
-        	for (int k = 0; k < 3; k++) {
-           	 	transformMatrix[i][j] += aux[i][k] * T1[k][j];
-        	}
-    	}
-	}
-
+	free(T1);free(T2);free(rotationMatrix);
 	return transformMatrix;
 }
 
-/*
+float angleBetweenVectors(float x1, float y1, float x2, float y2) {
+   float theta = atan2(y2, x2) - atan2(y1, x1);
+	if (theta < 0) {
+    	theta += 2 * M_PI;
+	}
+    return theta;
+}
+
 void rotation(float* cen,int index){
+	float angle = angleBetweenVectors(startX - cen[0], startY - cen[1] , currentX - cen[0], currentY - cen[1]) ;
+	float** mR = R(cen,angle);
 	
-	float** mR = R(cen,30);
-	
-	
-	float* x = shapes[index].getX();
-	float* y = shapes[index].getY();
-	float** mP = P(x[0],y[0],x[1],y[1]);
-	
-	float** mP1 = new float*[3];
-    for (int i = 0; i < 3; i++) {
-        mP1[i] = new float[2];
-    }
-	
-	for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 2; ++j) {
+	std::vector<float> x = shapes[index].getX();
+	std::vector<float> y = shapes[index].getY();
+	for(int t = 0;t < x.size();t++){
+		float* mP = P(x[t],y[t]);
+		float* mP1 = P(0,0);
+		for (int i = 0; i < 3; ++i) {
             for (int k = 0; k < 3; ++k) {
-                mP1[i][j] += mR[i][k] * mP[k][j];
+                mP1[i] += mR[i][k] * mP[k];
             }
-        }
-    }
-    printf("Center %f %f\n",cen[0],cen[1]);
-    printf("mP1 %f %f    %f %f \n",mP1[0][0],mP1[1][0],mP1[0][1],mP1[1][1]);
-    shapes[index].setNewDot1(mP1[0][0],mP1[1][0]);
-    shapes[index].setNewDot(mP1[0][1],mP1[1][1]);
+        
+   	 	}
+    	shapes[index].setDot(mP1[0],mP1[1],t);
+		free(mP); free(mP1);
+	}
+	
     
-    free(x); free(y); free(mR); free(mP); free(mP1);
-}*/
+    free(mR); 
+}
+
+void scale(float* cen, int index,float Xc,float Yc){
+	float** mT = T(cen[0],cen[1]);
+	float** mT2 = T(-cen[0],-cen[1]);
+	
+	float** mS  =  M3x3();
+	//float r = sqrt(pow((Xc - startX),2) + pow((Yc - startY),2));
+	//float r = sqrt(pow((Xc - cen[0]),2) + pow((Yc - cen[1]),2));
+
+	if(scrollDirection == 1){
+		mS[0][0] = 1.01f;
+    	mS[1][1] = 1.01f;
+	}else if(scrollDirection == -1){
+		mS[0][0] = 0.99f;
+    	mS[1][1] = 0.99f;
+	}else{
+		mS[0][0] = 0.0f;
+    	mS[1][1] = 0.0f;
+	}
+    mS[2][2] = 1;
+
+    float** S = multiply3M3x3(mT, mS,mT2);
+   
+    std::vector<float> x = shapes[index].getX();
+	std::vector<float> y = shapes[index].getY();
+	for(int t = 0;t < x.size();t++){
+		float* mP = P(x[t],y[t]);
+		float* mP1 = P(0,0);
+		for (int i = 0; i < 3; ++i) {
+            for (int k = 0; k < 3; ++k) {
+                mP1[i] += S[i][k] * mP[k];
+            }
+        
+   	 	}
+    	shapes[index].setDot(mP1[0],mP1[1],t);
+		free(mP); free(mP1);
+	}
+}
 
 void keyboard(unsigned char key, int xIn, int yIn){
 	printf("%i",key);
@@ -338,14 +387,12 @@ void mouse(int button, int state, int x, int y) {
 	    	if (option > 0 && option <= 4){
 	    		startX = x;
 	        	startY = window_h - y; 
-	        	isDrawing = 0;
 	        	new_shape.setOp(option);
 				new_shape.setNewDot1(startX,startY);
 					
 			}else{
 				startX = x;
 	        	startY = window_h - y; 
-	        	
 	        	new_shape.setNewDot1(startX,startY);
 				new_shape.setOp(2);	
 			}
@@ -354,18 +401,27 @@ void mouse(int button, int state, int x, int y) {
 		}
     	
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option > 0 && option <= 4) {
-		isDrawing = 1;
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
-    }else if(isSelect){
+    }else if(button == GLUT_LEFT_BUTTON && state == GLUT_UP && isSelect){
 		select();
-	}
-		
-	
+	}	
 }
 
-
-
+void mouseWheel(int button, int dir, int x, int y) {
+    if (dir > 0 && option == 7) { // scroll para cima
+        scrollDirection = 1;
+        display();
+    }
+    else if (dir < 0 && option == 7) { // scroll para baixo
+        scrollDirection = -1;
+        display();
+    }
+    else {
+        scrollDirection = 0; // sem interação
+        printf("%i \n",scrollDirection);
+    }
+}
 
 int main(int argc, char** argv){
     glutInit(&argc, argv);
@@ -377,23 +433,14 @@ int main(int argc, char** argv){
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT); 
 	
-	/*
-	new_shape.setNewDot(300,300);
-	new_shape.setNewDot1(100,100);
-	new_shape.setOp(2);
-	shapes.push_back(new_shape);
-	objSelect.push_back(0);	
-	float* cen = center();
-	
-	rotation(cen,0);
-	*/
     createMenu();
+    
+	glutMotionFunc(motion);
     glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
-	glutMotionFunc(motion);
-    
+	glutMouseWheelFunc(mouseWheel);
     glutMainLoop();
     return 0;
 }

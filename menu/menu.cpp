@@ -16,6 +16,9 @@ void menuCallback(int x) {
    		case 3:
    			option = 6; 
    			break;
+   		case 4:
+   			option = 7; 
+   			break;
    }
   
 }
