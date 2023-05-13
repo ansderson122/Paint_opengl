@@ -18,25 +18,31 @@ void Shape::draw() {
 	glColor3f(m_red, m_green, m_blue);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
   	switch (m_op){
-  		case 1:
-		  	glBegin(GL_LINES);
+  		case 1:{
+  			glBegin(GL_LINES);
 			glVertex2i(x[0], y[0]);
 			glVertex2i(x[1], y[1]);
-		    break;
-		case 2:
+			break;
+		  }
+		case 2:{
 			glBegin(GL_QUADS);
 			glVertex2i(x[0], y[0]);
 			glVertex2i(x[1], y[1]);
 			glVertex2i(x[2], y[2]);
 			glVertex2i(x[3], y[3]);
 			break;
-		case 3:
+		}
+			
+		case 3:{
 			glBegin(GL_TRIANGLES);
 			glVertex2i(x[0], y[0]);
 			glVertex2i(x[1], y[1]);
 			glVertex2i(x[2], y[2]);
 			break;
-		case 4:
+		}
+		
+
+		case 4:{	
 			glBegin(GL_LINE_LOOP);
 			float r =sqrt(pow((x[0]-x[1]),2) + pow((y[0]-y[1]),2));
 			float rad, x1 ,y1;
@@ -45,7 +51,19 @@ void Shape::draw() {
 		        x1 = x[0] + r * cos(rad);
 		        y1 = y[0] + r * sin(rad);
 	        	glVertex2f(x1, y1);
-    		} 
+    		}
+			break;
+		}
+    	 default:{
+    	 	glEnable(GL_POINT_SMOOTH);
+    		glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+		 	glPointSize(5.0);
+   			glBegin(GL_POINTS);
+   			glVertex2i(x[0], y[0]);
+			break;
+		 }
+    		
+   		
 	}
 	glEnd();
 }

@@ -37,6 +37,9 @@ void processShapeMenu(int x){
         case 4:
         	option = 4;
         	break;
+          case 5:
+        	option = 8;
+        	break;
     }
 }
 
@@ -47,6 +50,7 @@ void shapeMenu(int x){
 void createMenu() {
 	
 	int shapeMenu = glutCreateMenu(processShapeMenu);
+	glutAddMenuEntry("Ponto", 5);
 	glutAddMenuEntry("Linha", 1);
 	glutAddMenuEntry("Retangulo", 2);
 	glutAddMenuEntry("Triangulo", 3);

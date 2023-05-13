@@ -59,18 +59,18 @@ void display(void){
 		(*it).draw();
 	}		
 
-		//printf("o %i,%i \n",currentX,currentY);
-		if (isSelect){
-			new_shape.setNewDot(currentX,currentY);
-			new_shape.draw();
-		}
+	
+	if (isSelect){
+		new_shape.setNewDot(currentX,currentY);
+		new_shape.draw();
+	}
 	
 
 
 	glutSwapBuffers();
 }
 
-// Funï¿½ï¿½o que trata o redimensionamento da janela
+
 void reshape(int w, int h){
     glViewport(0, 0, window_w, window_h);
     glMatrixMode(GL_PROJECTION);
@@ -80,9 +80,8 @@ void reshape(int w, int h){
 }
 
 void motion(int x, int y) {
-    // atualiza a posiï¿½ï¿½o atual do mouse
     currentX = x;
-    currentY = window_h - y; // inverte a posiï¿½ï¿½o y para corresponder ï¿½ coordenada do OpenGL
+    currentY = window_h - y; 
     glutPostRedisplay();
 }
 
@@ -114,13 +113,11 @@ void select(){
     for (int i = 0; i < shapes.size();i++){
     	x2 = shapes[i].getX();
     	y2 = shapes[i].getY();
-			//printf("Q [%i,%i] [%i,%i] \n O[%i,%i]  [%i,%i] \n",x[0],y[0],x[1],y[1],x2[0],y2[0],x2[1],y2[1]);
 		if (selectObject(x,y,x2,y2)){
 			shapes[i].setColor(0.0,0.0,1.0);
 			objSelect.push_back(i);	
 		}
 	}
-	//printf("tamanho %i \n",objSelect.size());
 	new_shape.setNewDot1(0,0);
 	currentY=0;
 	currentX=0;
@@ -206,28 +203,25 @@ float* center(){
 	return center;
 }
 
-void translations(float xr, float yr,float* cen,int index){
+void applyProperty(float** matriz, int index){
 	std::vector<float> x = shapes[index].getX();
 	std::vector<float> y = shapes[index].getY();
-	float x1,y1;
-
-	x1 = xr - cen[0];
-	y1 = yr - cen[1];
-	float** mT = T(x1,y1);
-	
-	
-	
 	for(int t = 0; t < x.size();t++){
 		float* mP1 = P(0,0);
 		float* mP = P(x[t],y[t]);
 		for (int i = 0; i < 3; ++i) {
             for (int k = 0; k < 3; ++k) {
-                mP1[i] += mT[i][k] * mP[k];
+                mP1[i] += matriz[i][k] * mP[k];
             }
     	}
     	shapes[index].setDot(mP1[0],mP1[1],t);
 		free(mP);free(mP1);
 	}
+}
+
+void translations(float xr, float yr,float* cen,int index){
+	float** mT = T(xr - cen[0],yr - cen[1]);
+	applyProperty(mT,index);
     free(mT); 
 }
 
@@ -300,40 +294,21 @@ float angleBetweenVectors(float x1, float y1, float x2, float y2) {
 void rotation(float* cen,int index){
 	float angle = angleBetweenVectors(startX - cen[0], startY - cen[1] , currentX - cen[0], currentY - cen[1]) ;
 	float** mR = R(cen,angle);
-	
-	std::vector<float> x = shapes[index].getX();
-	std::vector<float> y = shapes[index].getY();
-	for(int t = 0;t < x.size();t++){
-		float* mP = P(x[t],y[t]);
-		float* mP1 = P(0,0);
-		for (int i = 0; i < 3; ++i) {
-            for (int k = 0; k < 3; ++k) {
-                mP1[i] += mR[i][k] * mP[k];
-            }
-        
-   	 	}
-    	shapes[index].setDot(mP1[0],mP1[1],t);
-		free(mP); free(mP1);
-	}
-	
-    
+	applyProperty(mR,index);
     free(mR); 
 }
 
 void scale(float* cen, int index,float Xc,float Yc){
 	float** mT = T(cen[0],cen[1]);
 	float** mT2 = T(-cen[0],-cen[1]);
-	
 	float** mS  =  M3x3();
-	//float r = sqrt(pow((Xc - startX),2) + pow((Yc - startY),2));
-	//float r = sqrt(pow((Xc - cen[0]),2) + pow((Yc - cen[1]),2));
-
+	
 	if(scrollDirection == 1){
-		mS[0][0] = 1.01f;
-    	mS[1][1] = 1.01f;
+		mS[0][0] = 1.05f;
+    	mS[1][1] = 1.05f;
 	}else if(scrollDirection == -1){
-		mS[0][0] = 0.99f;
-    	mS[1][1] = 0.99f;
+		mS[0][0] = 0.95f;
+    	mS[1][1] = 0.95f;
 	}else{
 		mS[0][0] = 0.0f;
     	mS[1][1] = 0.0f;
@@ -342,24 +317,11 @@ void scale(float* cen, int index,float Xc,float Yc){
 
     float** S = multiply3M3x3(mT, mS,mT2);
    
-    std::vector<float> x = shapes[index].getX();
-	std::vector<float> y = shapes[index].getY();
-	for(int t = 0;t < x.size();t++){
-		float* mP = P(x[t],y[t]);
-		float* mP1 = P(0,0);
-		for (int i = 0; i < 3; ++i) {
-            for (int k = 0; k < 3; ++k) {
-                mP1[i] += S[i][k] * mP[k];
-            }
-        
-   	 	}
-    	shapes[index].setDot(mP1[0],mP1[1],t);
-		free(mP); free(mP1);
-	}
+   applyProperty(S,index);
 }
 
 void keyboard(unsigned char key, int xIn, int yIn){
-	printf("%i",key);
+	//printf("%i",key);
 	switch (key){
 		case 127:
 			del();
@@ -384,17 +346,19 @@ void keyboard(unsigned char key, int xIn, int yIn){
 
 void mouse(int button, int state, int x, int y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) { 
-	    	if (option > 0 && option <= 4){
-	    		startX = x;
-	        	startY = window_h - y; 
+    		startX = x;
+	        startY = window_h - y; 
+	        if(option == 8){
+	        	new_shape.setOp(option);
+				new_shape.setNewDot1(startX,startY);
+				shapes.push_back(new_shape);
+			}else if (option > 0 && option <= 4  ){
 	        	new_shape.setOp(option);
 				new_shape.setNewDot1(startX,startY);
 					
 			}else{
-				startX = x;
-	        	startY = window_h - y; 
-	        	new_shape.setNewDot1(startX,startY);
 				new_shape.setOp(2);	
+	        	new_shape.setNewDot1(startX,startY);
 			}
 			
 		
@@ -403,7 +367,7 @@ void mouse(int button, int state, int x, int y) {
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && option > 0 && option <= 4) {
 		new_shape.setNewDot(currentX,currentY);
 		shapes.push_back(new_shape);
-    }else if(button == GLUT_LEFT_BUTTON && state == GLUT_UP && isSelect){
+    }else if(button == GLUT_LEFT_BUTTON && state == GLUT_UP && isSelect && option != 8 ){
 		select();
 	}	
 }
@@ -419,7 +383,6 @@ void mouseWheel(int button, int dir, int x, int y) {
     }
     else {
         scrollDirection = 0; // sem interação
-        printf("%i \n",scrollDirection);
     }
 }
 
@@ -428,7 +391,7 @@ int main(int argc, char** argv){
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
     glutInitWindowSize(window_w, window_h);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("ATIVIDADE ï¿½ INTRODUï¿½ï¿½O AO OPENGL");
+    glutCreateWindow("Paint com o OPENGL");
     
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT); 
